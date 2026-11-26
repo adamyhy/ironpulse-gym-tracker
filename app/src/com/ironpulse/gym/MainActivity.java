@@ -28,6 +28,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
@@ -245,6 +246,75 @@ public class MainActivity extends Activity {
                 res.put("active_days", activeDays);
                 res.put("today_date", today);
                 return res.toString();
+            } catch (Exception e) {
+                return "{}";
+            }
+        }
+
+        @JavascriptInterface
+        public String getMonthlyDashboard(String yearMonth) {
+            try {
+                // If yearMonth is empty, use current month (yyyy-MM)
+                if (yearMonth == null || yearMonth.isEmpty()) {
+                    yearMonth = new SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(new Date());
+                }
+
+                SQLiteDatabase db = dbHelper.getReadableDatabase();
+                JSONObject root = new JSONObject();
+                root.put("month", yearMonth);
+
+                // 1. Total reps and active workout days this month
+                String qSummary = "SELECT COALESCE(SUM(count), 0), COUNT(DISTINCT date) " +
+                                  "FROM logs WHERE date LIKE ?";
+                Cursor cSum = db.rawQuery(qSummary, new String[]{yearMonth + "%"});
+                int monthlyReps = 0;
+                int monthlyActiveDays = 0;
+                if (cSum.moveToFirst()) {
+                    monthlyReps = cSum.getInt(0);
+                    monthlyActiveDays = cSum.getInt(1);
+                }
+                cSum.close();
+                root.put("monthly_reps", monthlyReps);
+                root.put("active_days", monthlyActiveDays);
+
+                // 2. Daily breakdown for heatmap / calendar frequency (days 1 to 31)
+                String qDays = "SELECT date, SUM(count) as total_reps, COUNT(id) as sessions " +
+                               "FROM logs WHERE date LIKE ? GROUP BY date ORDER BY date ASC";
+                Cursor cDays = db.rawQuery(qDays, new String[]{yearMonth + "%"});
+                JSONObject dailyMap = new JSONObject();
+                while (cDays.moveToNext()) {
+                    String d = cDays.getString(0);
+                    int reps = cDays.getInt(1);
+                    dailyMap.put(d, reps);
+                }
+                cDays.close();
+                root.put("daily_data", dailyMap);
+
+                // 3. Exercise distribution this month
+                String qEx = "SELECT e.name, SUM(l.count), e.unit " +
+                             "FROM logs l JOIN exercises e ON l.exercise_id = e.id " +
+                             "WHERE l.date LIKE ? GROUP BY e.id ORDER BY SUM(l.count) DESC";
+                Cursor cEx = db.rawQuery(qEx, new String[]{yearMonth + "%"});
+                JSONArray exList = new JSONArray();
+                while (cEx.moveToNext()) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("name", cEx.getString(0));
+                    obj.put("reps", cEx.getInt(1));
+                    obj.put("unit", cEx.getString(2));
+                    exList.put(obj);
+                }
+                cEx.close();
+                root.put("exercise_breakdown", exList);
+
+                // 4. Workout Frequency Score / Consistency Rate
+                // Calculate total days passed in month so far
+                Calendar cal = Calendar.getInstance();
+                int currentDay = cal.get(Calendar.DAY_OF_MONTH);
+                int daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+                root.put("days_in_month", daysInMonth);
+                root.put("current_day", currentDay);
+
+                return root.toString();
             } catch (Exception e) {
                 return "{}";
             }

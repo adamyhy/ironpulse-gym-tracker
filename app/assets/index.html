@@ -433,6 +433,161 @@
       opacity: 0.9;
     }
 
+    /* DASHBOARD BULANAN STYLES */
+    .dashboard-container {
+      padding: 0 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .month-selector-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 14px;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .month-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--neon-orange-bright);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .consistency-card {
+      background: linear-gradient(135deg, #13151b, #1b1715);
+      border: 1px solid var(--neon-orange-glow);
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .consistency-rate {
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--neon-orange);
+      text-shadow: 0 0 15px var(--neon-orange-glow);
+    }
+
+    .heatmap-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .heatmap-header {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-white);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .cal-day-label {
+      text-align: center;
+      font-size: 10px;
+      color: var(--text-dim);
+      font-weight: 700;
+      padding-bottom: 4px;
+    }
+
+    .cal-cell {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      background: #181b24;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+      position: relative;
+      border: 1px solid transparent;
+    }
+
+    .cal-cell.active-low {
+      background: rgba(255, 85, 0, 0.25);
+      color: #fff;
+      border-color: rgba(255, 85, 0, 0.4);
+    }
+
+    .cal-cell.active-med {
+      background: rgba(255, 85, 0, 0.6);
+      color: #fff;
+      border-color: var(--neon-orange);
+      font-weight: 900;
+    }
+
+    .cal-cell.active-high {
+      background: var(--neon-orange);
+      color: #000;
+      font-weight: 900;
+      box-shadow: 0 0 10px var(--neon-orange-glow);
+    }
+
+    .cal-cell.is-today {
+      border: 1px solid #fff !important;
+    }
+
+    .legend-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    .legend-box {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    /* DISTRIBUTION LIST */
+    .dist-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #1c202b;
+    }
+
+    .dist-item:last-child {
+      border-bottom: none;
+    }
+
+    .dist-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .dist-reps {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--neon-orange);
+    }
+
     /* BOTTOM NAV */
     .bottom-nav {
       position: fixed;
@@ -573,10 +728,6 @@
       margin-top: 10px;
     }
 
-    .btn-submit:active {
-      transform: scale(0.98);
-    }
-
     .btn-delete {
       width: 100%;
       background: rgba(255, 51, 75, 0.15);
@@ -590,7 +741,6 @@
       margin-top: 10px;
     }
 
-    /* HISTORY VIEW */
     .history-card {
       background: var(--bg-card);
       border: 1px solid var(--border-dark);
@@ -671,6 +821,58 @@
     <div class="exercise-list" id="exercise-list"></div>
   </main>
 
+  <!-- TAB: DASHBOARD BULANAN (FREKUENSI & KONSISTENSI) -->
+  <main id="tab-dashboard" style="display: none;">
+    <div class="dashboard-container">
+      <div class="month-selector-bar">
+        <div class="month-title" id="dash-month-name">Bulan Ini</div>
+        <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Standar Fitness</span>
+      </div>
+
+      <!-- KONSISTENSI & FREKUENSI SCORE -->
+      <div class="consistency-card">
+        <div>
+          <div style="font-size: 12px; color: var(--text-gray); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Konsistensi Latihan</div>
+          <div class="consistency-rate" id="dash-consistency-pct">0%</div>
+          <div style="font-size: 11px; color: var(--neon-amber);" id="dash-consistency-label">Sedang Menghitung...</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 20px; font-weight: 800; color: #fff;" id="dash-active-days-count">0 Hari</div>
+          <div style="font-size: 11px; color: var(--text-gray);" id="dash-month-total-reps">0 Reps Total</div>
+        </div>
+      </div>
+
+      <!-- HEATMAP KALENDER AKTIVITAS BULANAN -->
+      <div class="heatmap-card">
+        <div class="heatmap-header">
+          <span>Frekuensi Latihan Kalender</span>
+          <span style="font-size: 11px; color: var(--neon-orange);" id="dash-cal-header-info"></span>
+        </div>
+        <div class="calendar-grid" id="calendar-grid">
+          <!-- Calendar Days Generated Here -->
+        </div>
+        <div class="legend-row">
+          <span>Istirahat</span>
+          <div class="legend-box" style="background: #181b24;"></div>
+          <div class="legend-box" style="background: rgba(255, 85, 0, 0.25);"></div>
+          <div class="legend-box" style="background: rgba(255, 85, 0, 0.6);"></div>
+          <div class="legend-box" style="background: var(--neon-orange);"></div>
+          <span>Intensif</span>
+        </div>
+      </div>
+
+      <!-- DISTRIBUSI LATIHAN BULANAN -->
+      <div class="heatmap-card">
+        <div class="heatmap-header">
+          <span>Distribusi Rutinitas Bulan Ini</span>
+        </div>
+        <div id="exercise-distribution-list">
+          <!-- Breakdown per exercise -->
+        </div>
+      </div>
+    </div>
+  </main>
+
   <!-- TAB: HISTORY -->
   <main id="tab-history" style="display: none; padding: 16px 20px;">
     <div class="section-header" style="padding-left: 0; padding-right: 0;">
@@ -684,6 +886,10 @@
     <div class="nav-item active" id="nav-btn-tracker" onclick="switchTab('tracker')">
       <svg viewBox="0 0 24 24"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3M19 19H5V5H19V19M17 12H7V10H17V12M13 16H7V14H13V16M17 8H7V6H17V8Z"/></svg>
       <span>Latihan</span>
+    </div>
+    <div class="nav-item" id="nav-btn-dashboard" onclick="switchTab('dashboard')">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3M9 17H7V10H9V17M13 17H11V7H13V17M17 17H15V13H17V17Z"/></svg>
+      <span>Dashboard</span>
     </div>
     <div class="nav-item" id="nav-btn-history" onclick="switchTab('history')">
       <svg viewBox="0 0 24 24"><path d="M13 3C8.03 3 4 7.03 4 12H1L4.89 15.89L4.96 16.03L9 12H6C6 8.13 9.13 5 13 5C16.87 5 20 8.13 20 12C20 15.87 16.87 19 13 19C11.07 19 9.32 18.21 8.06 16.94L6.64 18.36C8.27 19.99 10.51 21 13 21C17.97 21 22 16.97 22 12C22 7.03 17.97 3 13 3M12 8V13L16.28 15.54L17 14.33L13.5 12.25V8H12Z"/></svg>
@@ -976,17 +1182,127 @@
       document.getElementById(modalId).classList.remove('open');
     }
 
+    /* DASHBOARD LOGIC */
+    function loadDashboard() {
+      const now = new Date();
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      document.getElementById('dash-month-name').innerText = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+      let dash = {
+        monthly_reps: 0,
+        active_days: 0,
+        days_in_month: 30,
+        current_day: now.getDate(),
+        daily_data: {},
+        exercise_breakdown: []
+      };
+
+      if (isNative()) {
+        try {
+          dash = JSON.parse(NativeDB.getMonthlyDashboard(''));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // 1. Stats calculation
+      const currentDay = dash.current_day || now.getDate();
+      const activeDays = dash.active_days || 0;
+      const consistencyPct = currentDay > 0 ? Math.round((activeDays / currentDay) * 100) : 0;
+
+      document.getElementById('dash-consistency-pct').innerText = `${consistencyPct}%`;
+      document.getElementById('dash-active-days-count').innerText = `${activeDays} / ${currentDay} Hari`;
+      document.getElementById('dash-month-total-reps').innerText = `${dash.monthly_reps.toLocaleString()} Reps Bulan Ini`;
+
+      let labelText = "Kurang Konsisten";
+      if (consistencyPct >= 75) labelText = "🔥 Sangat Disiplin (Beast Mode)";
+      else if (consistencyPct >= 50) labelText = "⚡ Bagus, Tetap Pertahankan";
+      else if (consistencyPct >= 25) labelText = "💪 Mulai Bangun Kebiasaan";
+      document.getElementById('dash-consistency-label').innerText = labelText;
+
+      // 2. Render Calendar Heatmap
+      const calGrid = document.getElementById('calendar-grid');
+      calGrid.innerHTML = '';
+
+      // Day labels Sun-Sat
+      const dayHeaders = ['M', 'S', 'S', 'R', 'K', 'J', 'S'];
+      dayHeaders.forEach(dh => {
+        const h = document.createElement('div');
+        h.className = 'cal-day-label';
+        h.innerText = dh;
+        calGrid.appendChild(h);
+      });
+
+      // Calculate first day of month
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyCell = document.createElement('div');
+        calGrid.appendChild(emptyCell);
+      }
+
+      const daysInMonth = dash.days_in_month || new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const dailyMap = dash.daily_data || {};
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const reps = dailyMap[dayStr] || 0;
+
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell';
+        if (day === now.getDate()) cell.classList.add('is-today');
+
+        if (reps > 0) {
+          if (reps < 50) cell.classList.add('active-low');
+          else if (reps < 150) cell.classList.add('active-med');
+          else cell.classList.add('active-high');
+        }
+
+        cell.innerHTML = `<span>${day}</span>`;
+        if (reps > 0) {
+          cell.title = `${dayStr}: ${reps} reps`;
+        }
+        calGrid.appendChild(cell);
+      }
+
+      // 3. Render Exercise Breakdown
+      const distContainer = document.getElementById('exercise-distribution-list');
+      distContainer.innerHTML = '';
+
+      const exList = dash.exercise_breakdown || [];
+      if (exList.length === 0) {
+        distContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-dim); font-size: 12px;">Belum ada latihan tercatat bulan ini.</div>`;
+      } else {
+        exList.forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'dist-item';
+          row.innerHTML = `
+            <div class="dist-name">${item.name}</div>
+            <div class="dist-reps">${item.reps.toLocaleString()} <span style="font-size: 11px; color: var(--text-gray);">${item.unit}</span></div>
+          `;
+          distContainer.appendChild(row);
+        });
+      }
+    }
+
     function switchTab(tab) {
+      document.getElementById('tab-tracker').style.display = 'none';
+      document.getElementById('tab-dashboard').style.display = 'none';
+      document.getElementById('tab-history').style.display = 'none';
+
+      document.getElementById('nav-btn-tracker').classList.remove('active');
+      document.getElementById('nav-btn-dashboard').classList.remove('active');
+      document.getElementById('nav-btn-history').classList.remove('active');
+
       if (tab === 'tracker') {
         document.getElementById('tab-tracker').style.display = 'block';
-        document.getElementById('tab-history').style.display = 'none';
         document.getElementById('nav-btn-tracker').classList.add('active');
-        document.getElementById('nav-btn-history').classList.remove('active');
         loadData();
-      } else {
-        document.getElementById('tab-tracker').style.display = 'none';
+      } else if (tab === 'dashboard') {
+        document.getElementById('tab-dashboard').style.display = 'block';
+        document.getElementById('nav-btn-dashboard').classList.add('active');
+        loadDashboard();
+      } else if (tab === 'history') {
         document.getElementById('tab-history').style.display = 'block';
-        document.getElementById('nav-btn-tracker').classList.remove('active');
         document.getElementById('nav-btn-history').classList.add('active');
         loadHistory();
       }

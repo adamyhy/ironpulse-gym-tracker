@@ -1,5 +1,5 @@
 {
-  "version": 1,
-  "release_notes": "Initial release with SQLite offline support and OTA updater",
+  "version": 2,
+  "release_notes": "Monthly workout frequency calendar heatmap, consistency score, and routine distribution",
   "bundle_url": "https://raw.githubusercontent.com/adamyhy/ironpulse-gym-tracker/main/ota/bundle.zip"
 }
