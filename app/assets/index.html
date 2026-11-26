@@ -728,6 +728,19 @@
       margin-top: 10px;
     }
 
+    .btn-secondary {
+      width: 100%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-dark);
+      padding: 14px;
+      border-radius: 14px;
+      color: var(--text-gray);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
     .btn-delete {
       width: 100%;
       background: rgba(255, 51, 75, 0.15);
@@ -787,7 +800,7 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn-ota-sync" onclick="checkOtaUpdate()" title="Sync Update OTA">⚡</button>
+      <button class="btn-ota-sync" onclick="checkOtaUpdate(true)" title="Sync Update OTA">⚡</button>
       <button class="btn-add-exercise" onclick="openExerciseModal()">
         <span>+</span> Tambah
       </button>
@@ -848,9 +861,7 @@
           <span>Frekuensi Latihan Kalender</span>
           <span style="font-size: 11px; color: var(--neon-orange);" id="dash-cal-header-info"></span>
         </div>
-        <div class="calendar-grid" id="calendar-grid">
-          <!-- Calendar Days Generated Here -->
-        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
         <div class="legend-row">
           <span>Istirahat</span>
           <div class="legend-box" style="background: #181b24;"></div>
@@ -866,9 +877,7 @@
         <div class="heatmap-header">
           <span>Distribusi Rutinitas Bulan Ini</span>
         </div>
-        <div id="exercise-distribution-list">
-          <!-- Breakdown per exercise -->
-        </div>
+        <div id="exercise-distribution-list"></div>
       </div>
     </div>
   </main>
@@ -896,6 +905,26 @@
       <span>Riwayat</span>
     </div>
   </nav>
+
+  <!-- MODAL: PEMBARUAN TERSEDIA (PROMPT USER) -->
+  <div class="modal-overlay" id="modal-update-prompt">
+    <div class="modal-content" style="border-top-color: var(--accent-green);">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color: var(--accent-green); display: flex; align-items: center; gap: 8px;">
+          <span>⚡</span> Pembaruan Tersedia!
+        </h3>
+        <button class="modal-close" onclick="closeModal('modal-update-prompt')">&times;</button>
+      </div>
+      <div style="font-size: 15px; color: #fff; margin-bottom: 8px;">
+        Versi terbaru <b id="prompt-update-version" style="color: var(--neon-orange);">v2</b> telah siap dipasang.
+      </div>
+      <div style="font-size: 12px; color: var(--text-gray); margin-bottom: 20px; line-height: 1.5; background: var(--bg-main); padding: 12px; border-radius: 10px; border: 1px solid var(--border-dark);" id="prompt-update-notes">
+        Peningkatan performa dan penambahan fitur.
+      </div>
+      <button class="btn-submit" onclick="confirmApplyUpdate()" style="background: linear-gradient(90deg, #00e676, #00c853);">Update Sekarang (1 Detik)</button>
+      <button class="btn-secondary" onclick="closeModal('modal-update-prompt')">Nanti Saja (Tetap Offline)</button>
+    </div>
+  </div>
 
   <!-- MODAL: ADD LOG CUSTOM -->
   <div class="modal-overlay" id="modal-log">
@@ -975,6 +1004,7 @@
 
   <script>
     let globalExercises = [];
+    let pendingUpdate = null;
 
     function isNative() {
       return typeof NativeDB !== 'undefined';
@@ -988,12 +1018,24 @@
     }
     window.showOtaToast = showOtaToast;
 
-    function checkOtaUpdate() {
+    // Called automatically by Android Native when update is detected
+    window.onUpdateAvailable = function(version, notes, url) {
+      pendingUpdate = { version, notes, url };
+      document.getElementById('prompt-update-version').innerText = `v${version}`;
+      document.getElementById('prompt-update-notes').innerText = notes || 'Pembaruan antarmuka dan fitur baru siap dipasang.';
+      document.getElementById('modal-update-prompt').classList.add('open');
+    };
+
+    function confirmApplyUpdate() {
+      if (!pendingUpdate || !isNative()) return;
+      closeModal('modal-update-prompt');
+      NativeDB.applyOtaUpdate(pendingUpdate.version, pendingUpdate.url);
+    }
+
+    function checkOtaUpdate(manualClick) {
       if (isNative()) {
-        showOtaToast('Mengecek update ke GitHub...');
-        NativeDB.checkAndUpdateUi();
-      } else {
-        showOtaToast('Mode browser: OTA hanya aktif di APK Android.');
+        if (manualClick) showOtaToast('Mengecek update...');
+        NativeDB.checkUpdateSilent();
       }
     }
 
@@ -1205,7 +1247,6 @@
         }
       }
 
-      // 1. Stats calculation
       const currentDay = dash.current_day || now.getDate();
       const activeDays = dash.active_days || 0;
       const consistencyPct = currentDay > 0 ? Math.round((activeDays / currentDay) * 100) : 0;
@@ -1220,11 +1261,9 @@
       else if (consistencyPct >= 25) labelText = "💪 Mulai Bangun Kebiasaan";
       document.getElementById('dash-consistency-label').innerText = labelText;
 
-      // 2. Render Calendar Heatmap
       const calGrid = document.getElementById('calendar-grid');
       calGrid.innerHTML = '';
 
-      // Day labels Sun-Sat
       const dayHeaders = ['M', 'S', 'S', 'R', 'K', 'J', 'S'];
       dayHeaders.forEach(dh => {
         const h = document.createElement('div');
@@ -1233,7 +1272,6 @@
         calGrid.appendChild(h);
       });
 
-      // Calculate first day of month
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
       for (let i = 0; i < firstDayOfMonth; i++) {
         const emptyCell = document.createElement('div');
@@ -1264,7 +1302,6 @@
         calGrid.appendChild(cell);
       }
 
-      // 3. Render Exercise Breakdown
       const distContainer = document.getElementById('exercise-distribution-list');
       distContainer.innerHTML = '';
 
@@ -1342,6 +1379,9 @@
 
     window.onload = () => {
       loadData();
+      // Auto-check silent update on start & periodically
+      setTimeout(() => checkOtaUpdate(false), 1200);
+      setInterval(() => checkOtaUpdate(false), 30000); // Check every 30s silently if connected
     };
   </script>
 </body>

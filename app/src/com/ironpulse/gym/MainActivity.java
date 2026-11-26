@@ -254,7 +254,6 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getMonthlyDashboard(String yearMonth) {
             try {
-                // If yearMonth is empty, use current month (yyyy-MM)
                 if (yearMonth == null || yearMonth.isEmpty()) {
                     yearMonth = new SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(new Date());
                 }
@@ -263,7 +262,6 @@ public class MainActivity extends Activity {
                 JSONObject root = new JSONObject();
                 root.put("month", yearMonth);
 
-                // 1. Total reps and active workout days this month
                 String qSummary = "SELECT COALESCE(SUM(count), 0), COUNT(DISTINCT date) " +
                                   "FROM logs WHERE date LIKE ?";
                 Cursor cSum = db.rawQuery(qSummary, new String[]{yearMonth + "%"});
@@ -277,7 +275,6 @@ public class MainActivity extends Activity {
                 root.put("monthly_reps", monthlyReps);
                 root.put("active_days", monthlyActiveDays);
 
-                // 2. Daily breakdown for heatmap / calendar frequency (days 1 to 31)
                 String qDays = "SELECT date, SUM(count) as total_reps, COUNT(id) as sessions " +
                                "FROM logs WHERE date LIKE ? GROUP BY date ORDER BY date ASC";
                 Cursor cDays = db.rawQuery(qDays, new String[]{yearMonth + "%"});
@@ -290,7 +287,6 @@ public class MainActivity extends Activity {
                 cDays.close();
                 root.put("daily_data", dailyMap);
 
-                // 3. Exercise distribution this month
                 String qEx = "SELECT e.name, SUM(l.count), e.unit " +
                              "FROM logs l JOIN exercises e ON l.exercise_id = e.id " +
                              "WHERE l.date LIKE ? GROUP BY e.id ORDER BY SUM(l.count) DESC";
@@ -306,8 +302,6 @@ public class MainActivity extends Activity {
                 cEx.close();
                 root.put("exercise_breakdown", exList);
 
-                // 4. Workout Frequency Score / Consistency Rate
-                // Calculate total days passed in month so far
                 Calendar cal = Calendar.getInstance();
                 int currentDay = cal.get(Calendar.DAY_OF_MONTH);
                 int daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
@@ -325,12 +319,37 @@ public class MainActivity extends Activity {
             return prefs.getInt(PREF_VERSION_KEY, 1);
         }
 
+        // Check silently and notify web UI with version details if update is available
         @JavascriptInterface
-        public void checkAndUpdateUi() {
+        public void checkUpdateSilent() {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    performOtaCheck();
+                    checkOtaAvailable();
+                }
+            }).start();
+        }
+
+        // Apply update when user accepts modal dialog
+        @JavascriptInterface
+        public void applyOtaUpdate(final int newVersion, final String bundleUrl) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    notifyWeb("Mengunduh update v" + newVersion + "...", false);
+                    boolean success = downloadAndExtractBundle(bundleUrl);
+                    if (success) {
+                        prefs.edit().putInt(PREF_VERSION_KEY, newVersion).apply();
+                        notifyWeb("Sukses! Memuat versi baru...", true);
+                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                loadLocalUi();
+                            }
+                        }, 600);
+                    } else {
+                        notifyWeb("Gagal mengunduh pembaruan.", false);
+                    }
                 }
             }).start();
         }
@@ -354,13 +373,12 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void performOtaCheck() {
+    private void checkOtaAvailable() {
         try {
-            notifyWeb("Pemeriksaan update...", false);
             URL url = new URL(GITHUB_VERSION_URL);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(6000);
-            conn.setReadTimeout(6000);
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
             conn.setRequestMethod("GET");
 
             if (conn.getResponseCode() == 200) {
@@ -371,33 +389,28 @@ public class MainActivity extends Activity {
                 reader.close();
 
                 JSONObject json = new JSONObject(sb.toString());
-                int remoteVersion = json.getInt("version");
-                int localVersion = prefs.getInt(PREF_VERSION_KEY, 1);
+                final int remoteVersion = json.getInt("version");
+                final int localVersion = prefs.getInt(PREF_VERSION_KEY, 1);
+                final String notes = json.optString("release_notes", "Peningkatan performa dan fitur baru");
+                final String bundleUrl = json.getString("bundle_url");
 
                 if (remoteVersion > localVersion) {
-                    notifyWeb("Mengunduh update v" + remoteVersion + "...", false);
-                    String bundleUrl = json.getString("bundle_url");
-                    boolean success = downloadAndExtractBundle(bundleUrl);
-                    if (success) {
-                        prefs.edit().putInt(PREF_VERSION_KEY, remoteVersion).apply();
-                        notifyWeb("Sukses! Memuat versi baru...", true);
-                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                loadLocalUi();
+                    // Send event to Web UI to display user-friendly prompt modal
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (webView != null) {
+                                String script = String.format(Locale.US,
+                                        "if (window.onUpdateAvailable) { window.onUpdateAvailable(%d, '%s', '%s'); }",
+                                        remoteVersion, notes.replace("'", "\\'"), bundleUrl.replace("'", "\\'"));
+                                webView.evaluateJavascript(script, null);
                             }
-                        }, 700);
-                    } else {
-                        notifyWeb("Gagal mengekstrak update.", false);
-                    }
-                } else {
-                    notifyWeb("Aplikasi sudah versi terbaru (v" + localVersion + ")", false);
+                        }
+                    });
                 }
-            } else {
-                notifyWeb("Server pembaruan tidak merespon (" + conn.getResponseCode() + ")", false);
             }
-        } catch (Exception e) {
-            notifyWeb("Koneksi gagal atau offline.", false);
+        } catch (Exception ignored) {
+            // Offline or no connection: stay quiet, zero disruption
         }
     }
 
