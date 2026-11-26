@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>IRONPULSE Gym Tracker</title>
+  <style>
+    :root {
+      --bg-main: #0a0b0e;
+      --bg-card: #13151b;
+      --bg-elevated: #1a1e27;
+      --neon-orange: #ff5500;
+      --neon-orange-bright: #ff6a00;
+      --neon-orange-glow: rgba(255, 85, 0, 0.35);
+      --neon-orange-soft: rgba(255, 85, 0, 0.12);
+      --neon-amber: #ffaa00;
+      --text-white: #f5f6f8;
+      --text-gray: #8e95a5;
+      --text-dim: #545b6d;
+      --border-dark: #222633;
+      --border-glow: #ff550066;
+      --accent-green: #00e676;
+      --accent-red: #ff334b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-white);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding-bottom: 90px;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(10, 11, 14, 0.92);
+      backdrop-filter: blur(12px);
+      padding: 16px 20px 14px;
+      border-bottom: 1px solid var(--border-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ff5500, #ff8800);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px var(--neon-orange-glow);
+    }
+
+    .brand-logo svg {
+      width: 22px;
+      height: 22px;
+      fill: #ffffff;
+    }
+
+    .brand-text h1 {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #ffffff, var(--neon-orange-bright));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--neon-orange);
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-ota-sync {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-dark);
+      color: var(--text-gray);
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .btn-ota-sync:active {
+      transform: scale(0.92);
+      border-color: var(--neon-orange);
+      color: var(--neon-orange);
+    }
+
+    .btn-add-exercise {
+      background: var(--neon-orange-soft);
+      border: 1px solid var(--border-glow);
+      color: var(--neon-orange-bright);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 0 12px rgba(255, 85, 0, 0.15);
+      transition: all 0.2s ease;
+    }
+
+    .btn-add-exercise:active {
+      transform: scale(0.96);
+      background: var(--neon-orange-bright);
+      color: #000;
+    }
+
+    /* TOAST BANNER */
+    .toast-banner {
+      position: fixed;
+      top: 75px;
+      left: 20px;
+      right: 20px;
+      background: #1c212c;
+      border: 1px solid var(--neon-orange);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 12px;
+      display: none;
+      z-index: 1000;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+
+    /* HERO STATS */
+    .hero-stats {
+      padding: 18px 20px 10px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-box::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon-orange), transparent);
+    }
+
+    .stat-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--neon-orange-bright);
+      text-shadow: 0 0 10px var(--neon-orange-glow);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-gray);
+      margin-top: 4px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* SECTION TITLE */
+    .section-header {
+      padding: 16px 20px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-white);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 14px;
+      border-radius: 2px;
+      background: var(--neon-orange);
+      box-shadow: 0 0 8px var(--neon-orange);
+    }
+
+    /* EXERCISES LIST */
+    .exercise-list {
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .exercise-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 18px;
+      padding: 18px;
+      position: relative;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .exercise-card.completed {
+      border-color: rgba(0, 230, 118, 0.4);
+      background: linear-gradient(180deg, #13151b 0%, rgba(0, 230, 118, 0.05) 100%);
+    }
+
+    .exercise-card.completed .progress-bar {
+      background: linear-gradient(90deg, #00e676, #69f0ae);
+      box-shadow: 0 0 12px rgba(0, 230, 118, 0.5);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .card-info {
+      flex: 1;
+    }
+
+    .card-info h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-white);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-category {
+      font-size: 12px;
+      color: var(--neon-amber);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .top-right-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: var(--bg-elevated);
+      color: var(--text-gray);
+      font-weight: 600;
+    }
+
+    .completed .card-badge {
+      background: rgba(0, 230, 118, 0.15);
+      color: var(--accent-green);
+      border: 1px solid rgba(0, 230, 118, 0.3);
+    }
+
+    .btn-card-edit {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-dark);
+      border-radius: 8px;
+      color: var(--text-gray);
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .btn-card-edit:active {
+      color: var(--neon-orange);
+      border-color: var(--neon-orange);
+      background: var(--neon-orange-soft);
+    }
+
+    /* PROGRESS */
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .progress-count {
+      font-weight: 800;
+      color: var(--neon-orange);
+    }
+
+    .progress-target-clickable {
+      color: var(--text-gray);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px dashed #343a4d;
+      transition: all 0.2s;
+    }
+
+    .progress-target-clickable:active {
+      border-color: var(--neon-orange);
+      color: var(--neon-orange-bright);
+      background: var(--neon-orange-soft);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      background: #1e222d;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ff5500, #ff8800);
+      box-shadow: 0 0 10px var(--neon-orange-glow);
+      border-radius: 4px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ACTION BUTTONS */
+    .card-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-quick-add {
+      flex: 1;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-dark);
+      color: var(--text-white);
+      padding: 10px 0;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-quick-add:active {
+      transform: scale(0.95);
+      background: var(--neon-orange);
+      color: #000;
+      border-color: var(--neon-orange);
+      box-shadow: 0 0 14px var(--neon-orange-glow);
+    }
+
+    .btn-custom-add {
+      background: var(--neon-orange-bright);
+      color: #000;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 0 14px var(--neon-orange-glow);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-custom-add:active {
+      transform: scale(0.95);
+      opacity: 0.9;
+    }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 68px;
+      background: rgba(12, 14, 18, 0.95);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-dark);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 50;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 8px 16px;
+    }
+
+    .nav-item.active {
+      color: var(--neon-orange);
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #141720;
+      border-top: 2px solid var(--neon-orange);
+      border-radius: 24px 24px 0 0;
+      width: 100%;
+      max-width: 500px;
+      padding: 24px 20px 32px;
+      box-shadow: 0 -8px 32px rgba(255, 85, 0, 0.2);
+      animation: slideUp 0.25s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-white);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-gray);
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      color: var(--text-gray);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--bg-main);
+      border: 1px solid var(--border-dark);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--neon-orange);
+      box-shadow: 0 0 10px var(--neon-orange-glow);
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(90deg, #ff5500, #ff7700);
+      border: none;
+      padding: 16px;
+      border-radius: 14px;
+      color: #000;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 4px 20px var(--neon-orange-glow);
+      margin-top: 10px;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    .btn-delete {
+      width: 100%;
+      background: rgba(255, 51, 75, 0.15);
+      border: 1px solid rgba(255, 51, 75, 0.35);
+      color: var(--accent-red);
+      padding: 13px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    /* HISTORY VIEW */
+    .history-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .history-left h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .history-time {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .history-count {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--neon-orange);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast-banner" id="toast-banner">Pemeriksaan update...</div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43L20.57 12L17 15.57L8.43 7L12 3.43L10.57 2L9.14 3.43L7.71 2L5.57 4.14L4.14 2.71L2.71 4.14L4.14 5.57L2 7.71L3.43 9.14L2 10.57L3.43 12L7 8.43L15.57 17L12 20.57L13.43 22L14.86 20.57L16.29 22L18.43 19.86L19.86 21.29L21.29 19.86L19.86 18.43L22 16.29L20.57 14.86Z"/></svg>
+      </div>
+      <div class="brand-text">
+        <h1>IRONPULSE</h1>
+        <p>OFFLINE GYM SQLITE</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-ota-sync" onclick="checkOtaUpdate()" title="Sync Update OTA">⚡</button>
+      <button class="btn-add-exercise" onclick="openExerciseModal()">
+        <span>+</span> Tambah
+      </button>
+    </div>
+  </header>
+
+  <!-- TAB: TRACKER -->
+  <main id="tab-tracker">
+    <!-- STATS -->
+    <div class="hero-stats">
+      <div class="stat-box">
+        <div class="stat-num" id="stat-today">0</div>
+        <div class="stat-label">Hari Ini</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">Total Reps</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-days">0</div>
+        <div class="stat-label">Hari Aktif</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Rutinitas Harian</div>
+      <span style="font-size: 12px; color: var(--text-dim);" id="today-date">Hari Ini</span>
+    </div>
+
+    <!-- LIST OF EXERCISES -->
+    <div class="exercise-list" id="exercise-list"></div>
+  </main>
+
+  <!-- TAB: HISTORY -->
+  <main id="tab-history" style="display: none; padding: 16px 20px;">
+    <div class="section-header" style="padding-left: 0; padding-right: 0;">
+      <div class="section-title">Riwayat Latihan Terakhir</div>
+    </div>
+    <div id="history-list"></div>
+  </main>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" id="nav-btn-tracker" onclick="switchTab('tracker')">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3M19 19H5V5H19V19M17 12H7V10H17V12M13 16H7V14H13V16M17 8H7V6H17V8Z"/></svg>
+      <span>Latihan</span>
+    </div>
+    <div class="nav-item" id="nav-btn-history" onclick="switchTab('history')">
+      <svg viewBox="0 0 24 24"><path d="M13 3C8.03 3 4 7.03 4 12H1L4.89 15.89L4.96 16.03L9 12H6C6 8.13 9.13 5 13 5C16.87 5 20 8.13 20 12C20 15.87 16.87 19 13 19C11.07 19 9.32 18.21 8.06 16.94L6.64 18.36C8.27 19.99 10.51 21 13 21C17.97 21 22 16.97 22 12C22 7.03 17.97 3 13 3M12 8V13L16.28 15.54L17 14.33L13.5 12.25V8H12Z"/></svg>
+      <span>Riwayat</span>
+    </div>
+  </nav>
+
+  <!-- MODAL: ADD LOG CUSTOM -->
+  <div class="modal-overlay" id="modal-log">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-log-title">Catat Reps</h3>
+        <button class="modal-close" onclick="closeModal('modal-log')">&times;</button>
+      </div>
+      <input type="hidden" id="log-exercise-id">
+      <div class="form-group">
+        <label class="form-label" id="log-input-label">Jumlah Reps</label>
+        <input type="number" id="log-count" class="form-input" placeholder="contoh: 25" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catatan Tambahan (Opsional)</label>
+        <input type="text" id="log-notes" class="form-input" placeholder="contoh: Set 3 agak berat">
+      </div>
+      <button class="btn-submit" onclick="submitLog()">Simpan ke SQLite</button>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT / DELETE EXERCISE -->
+  <div class="modal-overlay" id="modal-edit-exercise">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Rutinitas</h3>
+        <button class="modal-close" onclick="closeModal('modal-edit-exercise')">&times;</button>
+      </div>
+      <input type="hidden" id="edit-ex-id">
+      <div class="form-group">
+        <label class="form-label">Nama Latihan</label>
+        <input type="text" id="edit-ex-name" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kategori Otot</label>
+        <input type="text" id="edit-ex-cat" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="color: var(--neon-orange);">Target Harian Baru</label>
+        <input type="number" id="edit-ex-target" class="form-input" style="border-color: var(--neon-orange); font-size: 18px; font-weight: bold;" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Satuan</label>
+        <input type="text" id="edit-ex-unit" class="form-input">
+      </div>
+      <button class="btn-submit" onclick="submitEditExercise()">Simpan Perubahan</button>
+      <button class="btn-delete" onclick="submitDeleteExercise()">Hapus Latihan Ini</button>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD EXERCISE -->
+  <div class="modal-overlay" id="modal-exercise">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Tambah Latihan Baru</h3>
+        <button class="modal-close" onclick="closeModal('modal-exercise')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nama Latihan</label>
+        <input type="text" id="new-ex-name" class="form-input" placeholder="misal: Diamond Push Up, Sit Up">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kategori Otot</label>
+        <input type="text" id="new-ex-cat" class="form-input" placeholder="misal: Dada, Bahu, Punggung, Kaki">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Harian (Jumlah)</label>
+        <input type="number" id="new-ex-target" class="form-input" placeholder="contoh: 100" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Satuan</label>
+        <input type="text" id="new-ex-unit" class="form-input" value="reps" placeholder="reps / detik / menit">
+      </div>
+      <button class="btn-submit" onclick="submitExercise()">Buat Rutinitas</button>
+    </div>
+  </div>
+
+  <script>
+    let globalExercises = [];
+
+    function isNative() {
+      return typeof NativeDB !== 'undefined';
+    }
+
+    function showOtaToast(msg) {
+      const banner = document.getElementById('toast-banner');
+      banner.innerText = msg;
+      banner.style.display = 'block';
+      setTimeout(() => { banner.style.display = 'none'; }, 3500);
+    }
+    window.showOtaToast = showOtaToast;
+
+    function checkOtaUpdate() {
+      if (isNative()) {
+        showOtaToast('Mengecek update ke GitHub...');
+        NativeDB.checkAndUpdateUi();
+      } else {
+        showOtaToast('Mode browser: OTA hanya aktif di APK Android.');
+      }
+    }
+
+    function loadData() {
+      let data = [];
+      let stats = { reps_today: 0, reps_all_time: 0, active_days: 1 };
+
+      if (isNative()) {
+        try {
+          data = JSON.parse(NativeDB.getTodaySummary());
+          stats = JSON.parse(NativeDB.getStats());
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      globalExercises = data;
+
+      document.getElementById('stat-today').innerText = stats.reps_today || 0;
+      document.getElementById('stat-total').innerText = stats.reps_all_time || 0;
+      document.getElementById('stat-days').innerText = stats.active_days || 1;
+
+      const now = new Date();
+      const options = { weekday: 'short', day: 'numeric', month: 'short' };
+      document.getElementById('today-date').innerText = now.toLocaleDateString('id-ID', options);
+
+      const container = document.getElementById('exercise-list');
+      container.innerHTML = '';
+
+      if (data.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 40px 20px; color: var(--text-dim);">Belum ada rutinitas. Tekan tombol <b>+ Tambah</b> di atas.</div>`;
+        return;
+      }
+
+      data.forEach(item => {
+        const percent = Math.min(100, Math.round((item.today_done / item.target_count) * 100));
+        const isDone = percent >= 100;
+
+        const card = document.createElement('div');
+        card.className = `exercise-card ${isDone ? 'completed' : ''}`;
+        card.innerHTML = `
+          <div class="card-top">
+            <div class="card-info">
+              <h3>${item.name}</h3>
+              <div class="card-category">${item.category}</div>
+            </div>
+            <div class="top-right-group">
+              <div class="card-badge">${isDone ? '🔥 REACHED' : `${percent}%`}</div>
+              <button class="btn-card-edit" onclick="openEditModal(${item.id})" title="Edit Latihan & Target">⚙️</button>
+            </div>
+          </div>
+          <div class="progress-info">
+            <span>Selesai: <b class="progress-count">${item.today_done}</b> ${item.unit}</span>
+            <div class="progress-target-clickable" onclick="openEditModal(${item.id})">
+              Target: <b>${item.target_count}</b> ${item.unit} <span style="font-size: 10px; color: var(--neon-orange);">✎</span>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar" style="width: ${percent}%;"></div>
+          </div>
+          <div class="card-actions">
+            <button class="btn-quick-add" onclick="quickAdd(${item.id}, 10)">+10</button>
+            <button class="btn-quick-add" onclick="quickAdd(${item.id}, 25)">+25</button>
+            <button class="btn-quick-add" onclick="quickAdd(${item.id}, 50)">+50</button>
+            <button class="btn-custom-add" onclick="openLogModal(${item.id}, '${item.name}', '${item.unit}')">Custom</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function quickAdd(id, amount) {
+      if (isNative()) {
+        NativeDB.addLog(id, amount, 'Quick Add +' + amount);
+      }
+      loadData();
+    }
+
+    function openLogModal(id, name, unit) {
+      document.getElementById('log-exercise-id').value = id;
+      document.getElementById('modal-log-title').innerText = `Catat ${name}`;
+      document.getElementById('log-input-label').innerText = `Jumlah (${unit})`;
+      document.getElementById('log-count').value = '';
+      document.getElementById('log-notes').value = '';
+      document.getElementById('modal-log').classList.add('open');
+      setTimeout(() => document.getElementById('log-count').focus(), 150);
+    }
+
+    function submitLog() {
+      const id = parseInt(document.getElementById('log-exercise-id').value);
+      const count = parseInt(document.getElementById('log-count').value);
+      const notes = document.getElementById('log-notes').value.trim();
+
+      if (!count || count <= 0) {
+        alert('Masukkan jumlah repetisi yang valid!');
+        return;
+      }
+
+      if (isNative()) {
+        NativeDB.addLog(id, count, notes);
+      }
+
+      closeModal('modal-log');
+      loadData();
+    }
+
+    function openEditModal(id) {
+      const ex = globalExercises.find(e => e.id === id);
+      if (!ex) return;
+
+      document.getElementById('edit-ex-id').value = ex.id;
+      document.getElementById('edit-ex-name').value = ex.name;
+      document.getElementById('edit-ex-cat').value = ex.category;
+      document.getElementById('edit-ex-target').value = ex.target_count;
+      document.getElementById('edit-ex-unit').value = ex.unit;
+
+      document.getElementById('modal-edit-exercise').classList.add('open');
+      setTimeout(() => document.getElementById('edit-ex-target').focus(), 150);
+    }
+
+    function submitEditExercise() {
+      const id = parseInt(document.getElementById('edit-ex-id').value);
+      const name = document.getElementById('edit-ex-name').value.trim();
+      const cat = document.getElementById('edit-ex-cat').value.trim() || 'General Gym';
+      const target = parseInt(document.getElementById('edit-ex-target').value);
+      const unit = document.getElementById('edit-ex-unit').value.trim() || 'reps';
+
+      if (!name) {
+        alert('Nama latihan tidak boleh kosong!');
+        return;
+      }
+      if (!target || target <= 0) {
+        alert('Target harian harus lebih besar dari 0!');
+        return;
+      }
+
+      if (isNative()) {
+        NativeDB.updateExercise(id, name, cat, target, unit);
+      }
+
+      closeModal('modal-edit-exercise');
+      loadData();
+    }
+
+    function submitDeleteExercise() {
+      const id = parseInt(document.getElementById('edit-ex-id').value);
+      const name = document.getElementById('edit-ex-name').value;
+      if (confirm(`Yakin ingin menghapus latihan "${name}"? Semua riwayat latihan ini juga akan terhapus.`)) {
+        if (isNative()) {
+          NativeDB.deleteExercise(id);
+        }
+        closeModal('modal-edit-exercise');
+        loadData();
+      }
+    }
+
+    function openExerciseModal() {
+      document.getElementById('new-ex-name').value = '';
+      document.getElementById('new-ex-cat').value = '';
+      document.getElementById('new-ex-target').value = '100';
+      document.getElementById('new-ex-unit').value = 'reps';
+      document.getElementById('modal-exercise').classList.add('open');
+      setTimeout(() => document.getElementById('new-ex-name').focus(), 150);
+    }
+
+    function submitExercise() {
+      const name = document.getElementById('new-ex-name').value.trim();
+      const cat = document.getElementById('new-ex-cat').value.trim() || 'General Gym';
+      const target = parseInt(document.getElementById('new-ex-target').value) || 100;
+      const unit = document.getElementById('new-ex-unit').value.trim() || 'reps';
+
+      if (!name) {
+        alert('Nama latihan wajib diisi!');
+        return;
+      }
+
+      if (isNative()) {
+        NativeDB.addExercise(name, cat, target, unit, 'dumbbell');
+      }
+
+      closeModal('modal-exercise');
+      loadData();
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('open');
+    }
+
+    function switchTab(tab) {
+      if (tab === 'tracker') {
+        document.getElementById('tab-tracker').style.display = 'block';
+        document.getElementById('tab-history').style.display = 'none';
+        document.getElementById('nav-btn-tracker').classList.add('active');
+        document.getElementById('nav-btn-history').classList.remove('active');
+        loadData();
+      } else {
+        document.getElementById('tab-tracker').style.display = 'none';
+        document.getElementById('tab-history').style.display = 'block';
+        document.getElementById('nav-btn-tracker').classList.remove('active');
+        document.getElementById('nav-btn-history').classList.add('active');
+        loadHistory();
+      }
+    }
+
+    function loadHistory() {
+      const container = document.getElementById('history-list');
+      container.innerHTML = '';
+
+      let logs = [];
+      if (isNative()) {
+        try {
+          logs = JSON.parse(NativeDB.getRecentHistory(30));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      if (logs.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-dim); padding: 40px;">Belum ada riwayat tercatat.</div>';
+        return;
+      }
+
+      logs.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'history-card';
+        div.innerHTML = `
+          <div class="history-left">
+            <h4>${item.name}</h4>
+            <div class="history-time">${item.date} ${item.notes ? '• ' + item.notes : ''}</div>
+          </div>
+          <div class="history-count">+${item.count} ${item.unit}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    window.onload = () => {
+      loadData();
+    };
+  </script>
+</body>
+</html>
