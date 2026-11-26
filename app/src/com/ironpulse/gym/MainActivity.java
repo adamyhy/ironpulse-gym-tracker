@@ -319,13 +319,13 @@ public class MainActivity extends Activity {
             return prefs.getInt(PREF_VERSION_KEY, 1);
         }
 
-        // Check silently and notify web UI with version details if update is available
+        // Check update with feedback for manual click or silent
         @JavascriptInterface
-        public void checkUpdateSilent() {
+        public void checkUpdate(final boolean isManual) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    checkOtaAvailable();
+                    checkOtaAvailable(isManual);
                 }
             }).start();
         }
@@ -336,7 +336,7 @@ public class MainActivity extends Activity {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    notifyWeb("Mengunduh update v" + newVersion + "...", false);
+                    notifyWeb("Mengunduh bundle v" + newVersion + "...", false);
                     boolean success = downloadAndExtractBundle(bundleUrl);
                     if (success) {
                         prefs.edit().putInt(PREF_VERSION_KEY, newVersion).apply();
@@ -346,7 +346,7 @@ public class MainActivity extends Activity {
                             public void run() {
                                 loadLocalUi();
                             }
-                        }, 600);
+                        }, 500);
                     } else {
                         notifyWeb("Gagal mengunduh pembaruan.", false);
                     }
@@ -373,15 +373,19 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void checkOtaAvailable() {
+    private void checkOtaAvailable(final boolean isManual) {
         try {
             URL url = new URL(GITHUB_VERSION_URL);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(5000);
+            conn.setConnectTimeout(6000);
+            conn.setReadTimeout(6000);
             conn.setRequestMethod("GET");
 
-            if (conn.getResponseCode() == 200) {
+            int code = conn.getResponseCode();
+            if (code == 200) {
+                // Online status true
+                setOnlineStatus(true);
+
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 StringBuilder sb = new StringBuilder();
                 String line;
@@ -395,7 +399,6 @@ public class MainActivity extends Activity {
                 final String bundleUrl = json.getString("bundle_url");
 
                 if (remoteVersion > localVersion) {
-                    // Send event to Web UI to display user-friendly prompt modal
                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                         @Override
                         public void run() {
@@ -407,11 +410,32 @@ public class MainActivity extends Activity {
                             }
                         }
                     });
+                } else if (isManual) {
+                    notifyWeb("Aplikasi sudah versi terbaru (v" + localVersion + ")", false);
+                }
+            } else {
+                setOnlineStatus(false);
+                if (isManual) {
+                    notifyWeb("Server GitHub merespon: HTTP " + code, false);
                 }
             }
-        } catch (Exception ignored) {
-            // Offline or no connection: stay quiet, zero disruption
+        } catch (Exception e) {
+            setOnlineStatus(false);
+            if (isManual) {
+                notifyWeb("Offline: Tidak ada koneksi internet (" + e.getMessage() + ")", false);
+            }
         }
+    }
+
+    private void setOnlineStatus(final boolean isOnline) {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                if (webView != null) {
+                    webView.evaluateJavascript("if (window.setNetworkStatus) { window.setNetworkStatus(" + isOnline + "); }", null);
+                }
+            }
+        });
     }
 
     private boolean downloadAndExtractBundle(String downloadUrl) {

@@ -113,6 +113,25 @@
       cursor: pointer;
       font-size: 16px;
       transition: all 0.2s;
+      position: relative;
+    }
+
+    /* ONLINE / OFFLINE INDICATOR DOT */
+    .status-dot {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #545b6d; /* default offline gray */
+      border: 1.5px solid var(--bg-main);
+      transition: background 0.3s;
+    }
+
+    .status-dot.online {
+      background: #00e676 !important; /* bright neon green */
+      box-shadow: 0 0 8px #00e676;
     }
 
     .btn-ota-sync:active {
@@ -940,7 +959,10 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn-ota-sync" onclick="checkOtaUpdate(true)" title="Sync Update OTA">⚡</button>
+      <button class="btn-ota-sync" onclick="checkOtaUpdate(true)" title="Status Online & Sync OTA">
+        <span>⚡</span>
+        <span class="status-dot" id="network-dot"></span>
+      </button>
       <button class="btn-add-exercise" onclick="openExerciseModal()">
         <span>+</span> Tambah
       </button>
@@ -1172,10 +1194,23 @@
       NativeDB.applyOtaUpdate(pendingUpdate.version, pendingUpdate.url);
     }
 
+    window.setNetworkStatus = function(isOnline) {
+      const dot = document.getElementById('network-dot');
+      if (dot) {
+        if (isOnline) {
+          dot.classList.add('online');
+        } else {
+          dot.classList.remove('online');
+        }
+      }
+    };
+
     function checkOtaUpdate(manualClick) {
       if (isNative()) {
-        if (manualClick) showOtaToast('Mengecek update...');
-        NativeDB.checkUpdateSilent();
+        if (manualClick) showOtaToast('Mengecek koneksi & update...');
+        NativeDB.checkUpdate(manualClick);
+      } else {
+        if (manualClick) showOtaToast('Mode browser: OTA aktif di APK Android');
       }
     }
 
