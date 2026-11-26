@@ -782,9 +782,149 @@
       font-weight: 800;
       color: var(--neon-orange);
     }
+    /* BOOT UP SPLASH SCREEN ANIMATION */
+    #boot-splash {
+      position: fixed;
+      inset: 0;
+      background: #07080a;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #boot-splash.fade-out {
+      opacity: 0;
+      transform: scale(1.08);
+      pointer-events: none;
+    }
+
+    .boot-logo-wrapper {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .boot-logo-box {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #ff5500, #ff8800);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 35px rgba(255, 85, 0, 0.6);
+      animation: pulseGlow 1.8s infinite alternate;
+    }
+
+    .boot-logo-box svg {
+      width: 42px;
+      height: 42px;
+      fill: #ffffff;
+      animation: iconPop 0.8s ease-out;
+    }
+
+    .boot-ring {
+      position: absolute;
+      inset: -8px;
+      border: 2px dashed rgba(255, 106, 0, 0.5);
+      border-radius: 28px;
+      animation: spinRing 6s linear infinite;
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 20px rgba(255, 85, 0, 0.4); transform: scale(0.97); }
+      100% { box-shadow: 0 0 45px rgba(255, 85, 0, 0.85); transform: scale(1.03); }
+    }
+
+    @keyframes spinRing {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes iconPop {
+      0% { transform: scale(0.3); opacity: 0; }
+      70% { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .boot-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #ffffff 30%, #ff6a00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      animation: trackingIn 0.9s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+    }
+
+    .boot-subtitle {
+      font-size: 11px;
+      color: var(--neon-orange);
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.85;
+      margin-bottom: 30px;
+    }
+
+    .boot-progress-bar {
+      width: 140px;
+      height: 3px;
+      background: #181b24;
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .boot-progress-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 0%;
+      background: linear-gradient(90deg, #ff5500, #ffaa00);
+      box-shadow: 0 0 10px var(--neon-orange);
+      animation: loadFill 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+    }
+
+    @keyframes loadFill {
+      0% { width: 0%; }
+      50% { width: 65%; }
+      100% { width: 100%; }
+    }
+
+    @keyframes trackingIn {
+      0% { letter-spacing: -2px; opacity: 0; }
+      40% { opacity: 0.6; }
+      100% { opacity: 1; letter-spacing: 4px; }
+    }
   </style>
 </head>
 <body>
+
+  <!-- BOOT UP SPLASH SCREEN -->
+  <div id="boot-splash">
+    <div class="boot-logo-wrapper">
+      <div class="boot-ring"></div>
+      <div class="boot-logo-box">
+        <svg viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43L20.57 12L17 15.57L8.43 7L12 3.43L10.57 2L9.14 3.43L7.71 2L5.57 4.14L4.14 2.71L2.71 4.14L4.14 5.57L2 7.71L3.43 9.14L2 10.57L3.43 12L7 8.43L15.57 17L12 20.57L13.43 22L14.86 20.57L16.29 22L18.43 19.86L19.86 21.29L21.29 19.86L19.86 18.43L22 16.29L20.57 14.86Z"/></svg>
+      </div>
+    </div>
+    <div class="boot-title">IRONPULSE</div>
+    <div class="boot-subtitle">Offline Gym Engine • SQLite</div>
+    <div class="boot-progress-bar">
+      <div class="boot-progress-fill"></div>
+    </div>
+  </div>
 
   <div class="toast-banner" id="toast-banner">Pemeriksaan update...</div>
 
@@ -1379,9 +1519,18 @@
 
     window.onload = () => {
       loadData();
+      // Dismiss boot-up splash after animation
+      setTimeout(() => {
+        const splash = document.getElementById('boot-splash');
+        if (splash) {
+          splash.classList.add('fade-out');
+          setTimeout(() => splash.remove(), 700);
+        }
+      }, 1500);
+
       // Auto-check silent update on start & periodically
-      setTimeout(() => checkOtaUpdate(false), 1200);
-      setInterval(() => checkOtaUpdate(false), 30000); // Check every 30s silently if connected
+      setTimeout(() => checkOtaUpdate(false), 2400);
+      setInterval(() => checkOtaUpdate(false), 30000);
     };
   </script>
 </body>
