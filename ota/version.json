@@ -1,5 +1,5 @@
 {
-  "version": 5,
-  "release_notes": "Live Online Green Indicator Dot, Clear Network Feedback, Boot-Up & Monthly Heatmap",
+  "version": 6,
+  "release_notes": "Monthly & Yearly Dashboard Filter: navigate previous/next months or pick any year/month",
   "bundle_url": "https://raw.githubusercontent.com/adamyhy/ironpulse-gym-tracker/main/ota/bundle.zip"
 }

@@ -464,10 +464,38 @@
       background: var(--bg-card);
       border: 1px solid var(--border-dark);
       border-radius: 14px;
-      padding: 10px 16px;
+      padding: 10px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+
+    .month-nav-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-dark);
+      color: var(--text-white);
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .month-nav-btn:active {
+      background: var(--neon-orange);
+      color: #000;
+      border-color: var(--neon-orange);
+    }
+
+    .month-center-select {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
     }
 
     .month-title {
@@ -476,6 +504,15 @@
       color: var(--neon-orange-bright);
       text-transform: uppercase;
       letter-spacing: 1px;
+    }
+
+    .month-input-hidden {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
     }
 
     .consistency-card {
@@ -1000,8 +1037,13 @@
   <main id="tab-dashboard" style="display: none;">
     <div class="dashboard-container">
       <div class="month-selector-bar">
-        <div class="month-title" id="dash-month-name">Bulan Ini</div>
-        <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Standar Fitness</span>
+        <button class="month-nav-btn" onclick="changeMonth(-1)">◀</button>
+        <div class="month-center-select">
+          <div class="month-title" id="dash-month-name">Bulan Ini</div>
+          <span style="font-size: 11px; color: var(--neon-orange);">▼</span>
+          <input type="month" id="month-picker-input" class="month-input-hidden" onchange="onMonthPickerChange(this.value)">
+        </div>
+        <button class="month-nav-btn" onclick="changeMonth(1)">▶</button>
       </div>
 
       <!-- KONSISTENSI & FREKUENSI SCORE -->
@@ -1399,36 +1441,68 @@
       document.getElementById(modalId).classList.remove('open');
     }
 
-    /* DASHBOARD LOGIC */
+    /* DASHBOARD LOGIC WITH MONTH & YEAR FILTER */
+    let currentDashYear = new Date().getFullYear();
+    let currentDashMonth = new Date().getMonth(); // 0 - 11
+
+    function changeMonth(delta) {
+      currentDashMonth += delta;
+      if (currentDashMonth < 0) {
+        currentDashMonth = 11;
+        currentDashYear--;
+      } else if (currentDashMonth > 11) {
+        currentDashMonth = 0;
+        currentDashYear++;
+      }
+      loadDashboard();
+    }
+
+    function onMonthPickerChange(val) {
+      if (!val) return;
+      const parts = val.split('-');
+      if (parts.length === 2) {
+        currentDashYear = parseInt(parts[0]);
+        currentDashMonth = parseInt(parts[1]) - 1;
+        loadDashboard();
+      }
+    }
+
     function loadDashboard() {
       const now = new Date();
       const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-      document.getElementById('dash-month-name').innerText = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+      
+      const isCurrentMonth = (currentDashYear === now.getFullYear() && currentDashMonth === now.getMonth());
+      document.getElementById('dash-month-name').innerText = `${monthNames[currentDashMonth]} ${currentDashYear}`;
+
+      const yearMonthStr = `${currentDashYear}-${String(currentDashMonth + 1).padStart(2, '0')}`;
+      const pickerInput = document.getElementById('month-picker-input');
+      if (pickerInput) pickerInput.value = yearMonthStr;
 
       let dash = {
         monthly_reps: 0,
         active_days: 0,
-        days_in_month: 30,
-        current_day: now.getDate(),
+        days_in_month: new Date(currentDashYear, currentDashMonth + 1, 0).getDate(),
+        current_day: isCurrentMonth ? now.getDate() : new Date(currentDashYear, currentDashMonth + 1, 0).getDate(),
         daily_data: {},
         exercise_breakdown: []
       };
 
       if (isNative()) {
         try {
-          dash = JSON.parse(NativeDB.getMonthlyDashboard(''));
+          dash = JSON.parse(NativeDB.getMonthlyDashboard(yearMonthStr));
         } catch (e) {
           console.error(e);
         }
       }
 
-      const currentDay = dash.current_day || now.getDate();
+      const daysInMonth = new Date(currentDashYear, currentDashMonth + 1, 0).getDate();
+      const currentDay = isCurrentMonth ? now.getDate() : daysInMonth;
       const activeDays = dash.active_days || 0;
       const consistencyPct = currentDay > 0 ? Math.round((activeDays / currentDay) * 100) : 0;
 
       document.getElementById('dash-consistency-pct').innerText = `${consistencyPct}%`;
       document.getElementById('dash-active-days-count').innerText = `${activeDays} / ${currentDay} Hari`;
-      document.getElementById('dash-month-total-reps').innerText = `${dash.monthly_reps.toLocaleString()} Reps Bulan Ini`;
+      document.getElementById('dash-month-total-reps').innerText = `${dash.monthly_reps.toLocaleString()} Reps ${monthNames[currentDashMonth]}`;
 
       let labelText = "Kurang Konsisten";
       if (consistencyPct >= 75) labelText = "🔥 Sangat Disiplin (Beast Mode)";
@@ -1447,22 +1521,21 @@
         calGrid.appendChild(h);
       });
 
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+      const firstDayOfMonth = new Date(currentDashYear, currentDashMonth, 1).getDay();
       for (let i = 0; i < firstDayOfMonth; i++) {
         const emptyCell = document.createElement('div');
         calGrid.appendChild(emptyCell);
       }
 
-      const daysInMonth = dash.days_in_month || new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
       const dailyMap = dash.daily_data || {};
 
       for (let day = 1; day <= daysInMonth; day++) {
-        const dayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayStr = `${currentDashYear}-${String(currentDashMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const reps = dailyMap[dayStr] || 0;
 
         const cell = document.createElement('div');
         cell.className = 'cal-cell';
-        if (day === now.getDate()) cell.classList.add('is-today');
+        if (isCurrentMonth && day === now.getDate()) cell.classList.add('is-today');
 
         if (reps > 0) {
           if (reps < 50) cell.classList.add('active-low');
